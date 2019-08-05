@@ -1,0 +1,244 @@
+#include "sys.h"
+#include "delay.h"
+#include "usart.h"
+#include "led.h"
+#include "lcd.h"
+#include "adc.h"
+#include "spi.h"
+#include "key.h"
+#include "LCD12864.h"
+#include "KeyBoard.h"
+#include <math.h>
+#include "ADF4351.h"
+
+//definations -->
+#define XaxisHeight 12
+#define YaxisHeight XaxisHeight
+
+//variables defination -->
+double ADF4351VALUE;
+extern int Enter_flag;
+
+//function defination -->
+u8 touchandgive(void);
+
+
+int main(void)
+{
+	char mode;
+	int t=0,i=0,count=0,step=0;
+	u16 I,y1,y2,voltage[500],TLV5618VALUE;
+	double freq_tmp=0.0,scan_period=0.0;
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
+	delay_init(168);
+	uart_init(115200);
+	reset_init();
+ 	LCD_Init();
+	ADF4351Init();
+	LCD_Display_Dir(1);
+	LCD_DisplayOn();
+	Adc_Init();
+	Init_KeyBoard_Port();
+	KeyBoard_Interrupt_Init();
+
+	LCD_Clear(DARKBLUE);
+	POINT_COLOR=RED;
+	BACK_COLOR=DARKBLUE;
+	ADF4351WriteFreq(40);
+	SPI1_Init();	
+
+	LCD_Set_Window(0,0,800,480);	
+	POINT_COLOR=GRAY;
+	LCD_ShowxString(30,40,210,32,32,(u8*)"STM32F4",1);
+	LCD_ShowxString(30,80,272,32,32,(u8*)"Input Freq(MHz)",1);
+	LCD_ShowxString(200,200,48,32,32,(u8*)"MHz",1);
+	POINT_COLOR=WHITE;
+  while(1)
+	{
+		freq_tmp=input_double_s(30,400);
+		if(freq_tmp==111||freq_tmp==112||freq_tmp==113||freq_tmp==114||freq_tmp==115||freq_tmp==116)
+			{
+				if(Enter_flag==1)
+					{
+						switch((int)freq_tmp)
+							{
+								case 111:
+									{
+										mode='B';
+										LCD_Fill(30,120,350,500,DARKBLUE);
+										LCD_ShowxString(30,120,272,32,32,(u8*)"Auto-Scanning    ",0);
+										break;
+									}
+								case 112:
+									{
+										mode='C';
+										LCD_Fill(30,120,350,500,DARKBLUE);
+										LCD_ShowxString(30,120,272,32,32,(u8*)"Manual-Scanning  ",0);
+										break;
+									}
+								case 113:
+									{
+										mode='D';
+										LCD_Fill(30,120,350,500,DARKBLUE);
+										LCD_ShowxString(30,120,272,32,32,(u8*)"Presetting       ",0);
+										break;
+									}
+								case 114:
+									{
+										mode='E';
+										LCD_Fill(30,120,350,500,DARKBLUE);
+										LCD_ShowxString(30,120,272,32,32,(u8*)"Analysing        ",0);
+										break;
+									}
+								case 115:
+									{
+										mode='F';
+										LCD_Fill(30,120,350,500,DARKBLUE);
+										LCD_ShowxString(30,120,272,32,32,(u8*)"Gain Altering    ",0);
+										break;
+									}
+								case 116:
+									{
+										mode='G';
+										LCD_Fill(30,120,350,500,DARKBLUE);
+										LCD_ShowxString(30,120,272,32,32,(u8*)"Spectrum Analysis",0);
+										break;
+									}
+							}
+					}
+			}
+					else
+						{					
+							switch(mode)
+								{
+								case 'B':
+									{
+										if(Enter_flag==1)
+											{
+												if(freq_tmp<=10)
+													{
+														scan_period = freq_tmp;
+														LCD_ShowxString(30,160,272,32,32,(u8*)"Start scanning",0);		
+														LCD_ShowxFloat(30,240,scan_period,1,10,32,0);												
+														for(count=0;count<=200;count++)
+														{
+															ADF4351VALUE = 90.7+0.1*count;
+															ADF4351WriteFreq(ADF4351VALUE);
+															delay_ms(scan_period*4.7);
+														}
+														LCD_ShowxString(30,160,272,32,32,(u8*)"Scanning done ",0);												
+													}
+											}
+										break;
+									}
+								case 'C':
+									{
+										if(Enter_flag==1)
+											{
+												count++;
+												ADF4351VALUE = 90.7+0.1*count;
+												LCD_ShowxFloat(30,200,ADF4351VALUE,1,10,32,0);
+												ADF4351WriteFreq(ADF4351VALUE);
+												if(count>=200) count=0;
+											}
+										break;
+									}
+								case 'D':
+									{
+										if(Enter_flag==1)
+											{
+												ADF4351VALUE = freq_tmp;
+												LCD_ShowxFloat(30,200,ADF4351VALUE,3,10,32,0);
+												ADF4351WriteFreq(ADF4351VALUE);
+											}
+										break;
+									}
+								case 'E':
+									{
+										if(Enter_flag==1)
+											{
+												if(freq_tmp==14)
+													{
+														LCD_Fill(370,40,800,300,DARKBLUE);
+														LCD_Showcoordinatesystem(370,300,4,3,90);
+														for(i=0;i<320;i++)
+														{
+															I = Get_Adc(ADC_Channel_8);
+															voltage[i]=I;
+														}		
+														for(i=0;i<320;i++)
+														{
+															voltage[i]=voltage[i]*(-0.032)+280;
+														}		
+														y1=voltage[0];
+														LCD_DrawPoint(370,y1);  //画出了第一个点												
+														for(i=0;i<319;i++)
+														{
+															y2=voltage[i+1];
+															LCD_DrawLine(370+i,y1,370+i,y2);
+															y1 = y2;
+															delay_ms(7);														
+														}
+														LCD_DrawPoint(370,y1);  //画出了第一个点
+													}
+											}
+										break;
+									}
+								case 'F':
+									{
+										if(Enter_flag==1)
+											{
+												step++;
+												TLV5618VALUE = 0x00FF+0x000E*step;
+												LCD_ShowxNum(30,200,step,10,32,0);
+												LCD_ShowxFloat(30,240,Get_Adc(ADC_Channel_8)*3.3/4096,3,10,32,0);
+												
+												PAout(4)=0;
+												delay_ms(1);
+												SPI_I2S_SendData(SPI1,TLV5618VALUE);
+												delay_ms(1);
+												PAout(4)=1;
+												
+												if(step==20) step=0;
+											}
+										break;
+									}
+								case 'G':
+									{								
+										if(Enter_flag==1)
+											{
+												LCD_Fill(370,40,800,500,DARKBLUE);
+												LCD_Showcoordinatesystem(370,300,4,3,90);
+												for(i=0;i<=400;i++)
+												{
+													ADF4351VALUE = 90.7+0.05*i;
+													ADF4351WriteFreq(ADF4351VALUE);
+													I = Get_Adc(ADC_Channel_8);
+													voltage[i]=I*(-0.250)+1000;
+													LCD_ShowxFloat(30,200,ADF4351VALUE,2,10,32,0);
+												}
+												y1=voltage[0];
+												LCD_DrawPoint(370,y1);  //画出了第一个点												
+												for(i=0;i<400;i++)
+												{
+													y2=voltage[i+1];
+													LCD_DrawLine(370+i,y1,370+i,y2);
+													y1 = y2;
+													delay_ms(7);
+													if(y2<230&&i%2==0)
+														{
+															LCD_ShowxFloat(370+i,320+t*30,90.7+0.05*i-10.7,3,10,16,0);
+															t++;
+														}		
+												}
+												LCD_DrawPoint(370,y1);  //画出了第一个点
+												LCD_ShowxFloat(30,240,voltage[100],3,10,32,0);
+												t=0;												
+											}
+										break;
+									}						
+								}
+						}
+						Enter_flag=0;
+	} 
+}
