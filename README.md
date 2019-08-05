@@ -26,26 +26,9 @@ SD卡驱动适用于STM32F407核心板包含了从正点原子探索者开发板
 **定义一个FIL类型的指针fp并分配对应的空间，作为打开的文件的文件指针。**
 使用`f_open(fp,%FILE_NAME%,%MODE_FLAG%)`函数来打开一个文件。  
 下面是不同flag对应的打开方式。    
-|Flag|Meaning|
-|---|---|
-|FA_READ|Specifies read access to the object. Data can be read from the file.|
-|FA_WRITE|Specifies write access to the object. Data can be written to the file. Combine with FA_READ for read-write access.|
-|FA_OPEN_EXISTING|Opens the file. The function fails if the file is not existing. (Default)|
-|FA_CREATE_NEW|Creates a new file. The function fails with FR_EXIST if the file is existing.|
-|FA_CREATE_ALWAYS|Creates a new file. If the file is existing, it will be truncated and overwritten.|
-|FA_OPEN_ALWAYS|Opens the file if it is existing. If not, a new file will be created.|
-|FA_OPEN_APPEND|Same as FA_OPEN_ALWAYS except the read/write pointer is set end of the file.|
+![Flag-Meaning](docpic/Flag-meaning.png)  
 如果您更习惯于POSIX格式的模式描述符，您也可以参考下表。  
-|POSIX|FatFs|
-|---|---|
-|"r"|`FA_READ`|
-|"r+"|`FA_READ | FA_WRITE`|
-|"w"|`FA_CREATE_ALWAYS | FA_WRITE`|
-|"w+"|`FA_CREATE_ALWAYS | FA_WRITE | FA_READ`|
-|"a"|`FA_OPEN_APPEND | FA_WRITE`|
-|"a+"|`FA_OPEN_APPEND | FA_WRITE | FA_READ`|
-|"wx"|`FA_CREATE_NEW | FA_WRITE`|
-|"w+x"|`FA_CREATE_NEW | FA_WRITE | FA_READ`|
+![POXIS-FatFs](docpic/POSIX-FatFs.png)  
 使用`f_close(fp)`关闭文件。  
 使用`f_lseek(fp,%BIAS%)`移动当前文件内的操作位置。  
 使用`f_read(fp,%CONTENT_BUFFER%,%BYTES_TO_READ%,%PTR_OF_BYTES_READ%)`函数读取fp文件内的`%BYTES_TO_READ%`大小的内容，并保存在`%CONTENT_BUFFER%`内，读取到的字节数存储在`%PTR_OF_BYTES_READ%`指向的UINT格式的变量中。  
@@ -65,13 +48,7 @@ SPI部分使用了STM32自带的SPI驱动，使用输入**GPIO_A_0**的**上升�
 使用`SPI1_Init()`函数初始化SPI，SPI工作在主机状态下。  
 您可以使用`SPI_SetSpeed()`函数设置SPI时钟速度。    
 其中，SPI的接口按如下方式绑定:
-|GPIO Port|Interface|
-|---|---|
-|A3|与FPGA约定的更新信号，可以不使用|
-|A4|片选(CS)信号|
-|A5|时钟(CLK)信号|
-|A6|MISO，即FPGA输入到单片机的信号|
-|A7|MOSI，即单片机输出到FPGA的信号|
+![SPI接口绑定](docpic/GPIO_Port.png)  
 使用`EXTIX_Init()`函数初始化外部中断处理，当中断触发后将执行`EXTI0_IRQHandler()`函数。
 ### SPI接收函数
 *main函数内主要是示波器的作图触摸部分，仅使用SPI的话可以无视。具体的接收部分在`HARDWARE/EXTI/exti.c`的第30行开始，以下是关键部分的代码。*  
