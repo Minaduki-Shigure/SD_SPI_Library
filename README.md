@@ -23,8 +23,8 @@ SD卡驱动适用于STM32F407核心板包含了从正点原子探索者开发板
 函数的返回值为0则初始化成功，否则请在ff13c/source/ff.h的第180行查看错误代码对应的错误类型。
 ```
 ### 文件操作
-**定义一个FIL类型的指针fp并分配对应的空间，作为打开的文件的文件指针。**
-使用`f_open(fp,%FILE_NAME%,%MODE_FLAG%)`函数来打开一个文件。  
+**定义一个FIL类型的指针fp并分配对应的空间，作为打开的文件的文件指针。**    
+使用`f_open(fp,%FILE_NAME%,%MODE_FLAG%)`函数来打开一个文件。   
 下面是不同flag对应的打开方式。    
 ![Flag-Meaning](docpic/Flag-meaning.png)  
 如果您更习惯于POSIX格式的模式描述符，您也可以参考下表。  
@@ -47,7 +47,7 @@ SPI部分使用了STM32自带的SPI驱动，使用输入**GPIO_A_0**的**上升�
 ### 初始化函数
 使用`SPI1_Init()`函数初始化SPI，SPI工作在主机状态下。  
 您可以使用`SPI_SetSpeed()`函数设置SPI时钟速度。    
-其中，SPI的接口按如下方式绑定:
+其中，SPI的接口按如下方式绑定:   
 ![SPI接口绑定](docpic/GPIO_Port.png)  
 使用`EXTIX_Init()`函数初始化外部中断处理，当中断触发后将执行`EXTI0_IRQHandler()`函数。
 ### SPI接收函数
